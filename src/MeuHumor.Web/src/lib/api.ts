@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { CreateMoodPayload, MonthSummary, MoodEntry, MoodType } from '../types/mood'
+import type { CreateMoodPayload, MonthSummary, MoodEntry, MoodType, UpdateMoodPayload } from '../types/mood'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? ''
 
@@ -45,6 +45,12 @@ export const moodApi = {
   register: (payload: CreateMoodPayload) =>
     apiFetch<MoodEntry>('/api/mood', {
       method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  updateToday: (payload: UpdateMoodPayload) =>
+    apiFetch<MoodEntry>('/api/mood/today', {
+      method: 'PUT',
       body: JSON.stringify(payload),
     }),
 

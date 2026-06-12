@@ -56,6 +56,39 @@ public class MoodController : ControllerBase
         }
     }
 
+    /// <summary>Atualiza o humor do dia atual (registros de dias anteriores não podem ser editados).</summary>
+    [HttpPut("today")]
+    [ProducesResponseType(typeof(MoodEntryResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateTodayMood(
+        [FromBody] UpdateMoodEntryDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var userId = User.GetUserId();
+            var result = await _moodService.UpdateTodayMoodAsync(userId, dto, cancellationToken);
+            return Ok(result);
+        }
+        catch (MoodEntryNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message, data = ex.Date });
+        }
+        catch (MoodEntryNotEditableException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message, data = ex.Date });
+        }
+        catch (InvalidMoodTypeException ex)
+        {
+            return BadRequest(new { message = ex.Message, humor = ex.MoodTypeId });
+        }
+    }
+
     /// <summary>Lista o histórico de humor do usuário autenticado (mais recente primeiro).</summary>
     [HttpGet("history")]
     [ProducesResponseType(typeof(IReadOnlyList<MoodEntryResponseDto>), StatusCodes.Status200OK)]

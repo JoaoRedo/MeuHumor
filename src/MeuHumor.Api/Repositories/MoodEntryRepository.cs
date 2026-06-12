@@ -31,6 +31,55 @@ public class MoodEntryRepository : IMoodEntryRepository
             new CommandDefinition(sql, new { UserId = userId, Data = data }, cancellationToken: cancellationToken));
     }
 
+    public async Task<MoodEntry?> GetByUserAndDateAsync(Guid userId, DateOnly data, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new NpgsqlConnection(_connectionString);
+
+        const string sql = """
+            SELECT id            AS Id,
+                   user_id       AS UserId,
+                   data          AS Data,
+                   humor         AS Humor,
+                   observacao    AS Observacao,
+                   criado_em     AS CriadoEm,
+                   atualizado_em AS AtualizadoEm
+            FROM public.mood_entries
+            WHERE user_id = @UserId AND data = @Data
+            """;
+
+        return await connection.QuerySingleOrDefaultAsync<MoodEntry>(
+            new CommandDefinition(sql, new { UserId = userId, Data = data }, cancellationToken: cancellationToken));
+    }
+
+    public async Task<MoodEntry?> UpdateAsync(
+        Guid id, Guid userId, DateOnly data, short humor, string? observacao, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new NpgsqlConnection(_connectionString);
+
+        const string sql = """
+            UPDATE public.mood_entries
+            SET humor = @Humor,
+                observacao = @Observacao,
+                atualizado_em = NOW()
+            WHERE id = @Id
+              AND user_id = @UserId
+              AND data = @Data
+            RETURNING id            AS Id,
+                      user_id       AS UserId,
+                      data          AS Data,
+                      humor         AS Humor,
+                      observacao    AS Observacao,
+                      criado_em     AS CriadoEm,
+                      atualizado_em AS AtualizadoEm
+            """;
+
+        return await connection.QuerySingleOrDefaultAsync<MoodEntry>(
+            new CommandDefinition(
+                sql,
+                new { Id = id, UserId = userId, Data = data, Humor = humor, Observacao = observacao },
+                cancellationToken: cancellationToken));
+    }
+
     public async Task<MoodEntry> CreateAsync(MoodEntry entry, CancellationToken cancellationToken = default)
     {
         await using var connection = new NpgsqlConnection(_connectionString);

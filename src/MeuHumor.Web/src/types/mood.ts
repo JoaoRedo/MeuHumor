@@ -28,3 +28,8 @@ export interface CreateMoodPayload {
   observacao?: string
   data?: string
 }
+
+export interface UpdateMoodPayload {
+  humor: number
+  observacao?: string
+}

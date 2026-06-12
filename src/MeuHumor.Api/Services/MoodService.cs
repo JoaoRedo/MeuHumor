@@ -33,7 +33,7 @@ public class MoodService : IMoodService
         var moodType = await _moodTypeRepository.GetActiveByIdAsync(dto.Humor, cancellationToken)
             ?? throw new InvalidMoodTypeException(dto.Humor);
 
-        var data = dto.Data ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var data = dto.Data ?? GetTodayDate();
 
         if (await _moodEntryRepository.ExistsForDateAsync(userId, data, cancellationToken))
             throw new DuplicateMoodEntryException(data);
@@ -50,6 +50,23 @@ public class MoodService : IMoodService
 
         var created = await _moodEntryRepository.CreateAsync(entry, cancellationToken);
         return MapToResponse(created, moodType);
+    }
+
+    public async Task<MoodEntryResponseDto> UpdateTodayMoodAsync(
+        Guid userId, UpdateMoodEntryDto dto, CancellationToken cancellationToken = default)
+    {
+        var moodType = await _moodTypeRepository.GetActiveByIdAsync(dto.Humor, cancellationToken)
+            ?? throw new InvalidMoodTypeException(dto.Humor);
+
+        var today = GetTodayDate();
+        var existing = await _moodEntryRepository.GetByUserAndDateAsync(userId, today, cancellationToken)
+            ?? throw new MoodEntryNotFoundException(today);
+
+        var updated = await _moodEntryRepository.UpdateAsync(
+            existing.Id, userId, today, moodType.Id, dto.Observacao, cancellationToken)
+            ?? throw new MoodEntryNotEditableException(existing.Data);
+
+        return MapToResponse(updated, moodType);
     }
 
     public async Task<IReadOnlyList<MoodEntryResponseDto>> GetHistoryAsync(
@@ -91,6 +108,8 @@ public class MoodService : IMoodService
             ContagemPorCategoria = contagem
         };
     }
+
+    private static DateOnly GetTodayDate() => DateOnly.FromDateTime(DateTime.UtcNow);
 
     private static void ValidateMonthYear(short mes, short ano)
     {
