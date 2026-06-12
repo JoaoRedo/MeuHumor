@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: meuhumor-api
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./src/MeuHumor.Api/Dockerfile
+    dockerContext: ./src/MeuHumor.Api
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__ConnectionString
+        sync: false
+      - key: Supabase__Url
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false

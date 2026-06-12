@@ -65,9 +65,20 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMeuHumorCors(this IServiceCollection services, IConfiguration configuration)
     {
         var corsSettings = configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
+
         var origins = corsSettings.AllowedOrigins.Length > 0
             ? corsSettings.AllowedOrigins
-            : ["http://localhost:5173"];
+            : [];
+
+        var corsFromEnv = configuration["CORS_ALLOWED_ORIGINS"];
+        if (!string.IsNullOrWhiteSpace(corsFromEnv))
+        {
+            origins = corsFromEnv
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
+        if (origins.Length == 0)
+            origins = ["http://localhost:5173"];
 
         services.AddCors(options =>
         {
