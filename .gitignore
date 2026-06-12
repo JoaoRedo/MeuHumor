@@ -5,6 +5,7 @@ obj/
 *.suo
 .vs/
 appsettings.*.local.json
+appsettings.Development.json
 
 ## Node
 node_modules/
