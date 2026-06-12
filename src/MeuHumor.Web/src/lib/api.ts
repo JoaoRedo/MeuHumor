@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { CreateMoodPayload, MonthSummary, MoodEntry } from '../types/mood'
+import type { CreateMoodPayload, MonthSummary, MoodEntry, MoodType } from '../types/mood'
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? ''
 
@@ -40,6 +40,8 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 
 export const moodApi = {
+  getMoodTypes: () => apiFetch<MoodType[]>('/api/mood/types'),
+
   register: (payload: CreateMoodPayload) =>
     apiFetch<MoodEntry>('/api/mood', {
       method: 'POST',

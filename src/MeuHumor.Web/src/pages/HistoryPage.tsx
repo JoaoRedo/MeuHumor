@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { moodApi } from '../lib/api'
-import { MOOD_OPTIONS, type MoodEntry } from '../types/mood'
+import type { MoodEntry } from '../types/mood'
 
 function formatDate(date: string) {
   return new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
@@ -9,10 +9,6 @@ function formatDate(date: string) {
     month: 'short',
     year: 'numeric',
   })
-}
-
-function getMoodEmoji(humor: number) {
-  return MOOD_OPTIONS.find((o) => o.value === humor)?.emoji ?? '😐'
 }
 
 export function HistoryPage() {
@@ -64,7 +60,7 @@ export function HistoryPage() {
           {entries.map((entry) => (
             <article key={entry.id} className={`card history-item mood-border-${entry.humor}`}>
               <div className="history-item-header">
-                <span className="history-emoji">{getMoodEmoji(entry.humor)}</span>
+                <span className="history-emoji">{entry.humorEmoji ?? '😐'}</span>
                 <div>
                   <h3>{entry.humorLabel}</h3>
                   <time dateTime={entry.data}>{formatDate(entry.data)}</time>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { MoodTypesProvider } from './context/MoodTypesContext'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { DashboardPage } from './pages/DashboardPage'
@@ -16,7 +17,7 @@ export default function App() {
           <Route path="/cadastro" element={<RegisterPage />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
+            <Route element={<MoodTypesProvider><Layout /></MoodTypesProvider>}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/historico" element={<HistoryPage />} />
             </Route>

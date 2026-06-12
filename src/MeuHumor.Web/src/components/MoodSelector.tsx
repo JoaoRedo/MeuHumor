@@ -1,25 +1,26 @@
-import { MOOD_OPTIONS, type MoodValue } from '../types/mood'
+import type { MoodType } from '../types/mood'
 
 interface MoodSelectorProps {
-  value: MoodValue | null
-  onChange: (value: MoodValue) => void
+  types: MoodType[]
+  value: number | null
+  onChange: (value: number) => void
   disabled?: boolean
 }
 
-export function MoodSelector({ value, onChange, disabled }: MoodSelectorProps) {
+export function MoodSelector({ types, value, onChange, disabled }: MoodSelectorProps) {
   return (
     <div className="mood-grid" role="radiogroup" aria-label="Selecione seu humor">
-      {MOOD_OPTIONS.map((option) => (
+      {types.map((option) => (
         <button
-          key={option.value}
+          key={option.id}
           type="button"
           role="radio"
-          aria-checked={value === option.value}
+          aria-checked={value === option.id}
           disabled={disabled}
-          className={`mood-option mood-${option.value} ${value === option.value ? 'selected' : ''}`}
-          onClick={() => onChange(option.value)}
+          className={`mood-option mood-${option.id} ${value === option.id ? 'selected' : ''}`}
+          onClick={() => onChange(option.id)}
         >
-          <span className="mood-emoji">{option.emoji}</span>
+          <span className="mood-emoji">{option.emoji ?? '😐'}</span>
           <span className="mood-label">{option.label}</span>
         </button>
       ))}

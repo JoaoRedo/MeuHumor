@@ -16,13 +16,38 @@ CREATE TABLE IF NOT EXISTS public.users (
 COMMENT ON TABLE public.users IS 'Perfil do usuário; id espelha auth.users.id';
 
 -- ---------------------------------------------------------------------------
--- 2. Registros diários de humor
+-- 2. Catálogo de tipos de humor
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.mood_types (
+    id            SMALLINT PRIMARY KEY,
+    label         VARCHAR(80) NOT NULL,
+    emoji         VARCHAR(10),
+    ordem         SMALLINT NOT NULL,
+    ativo         BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE public.mood_types IS 'Catálogo de tipos de humor (editável sem deploy)';
+
+INSERT INTO public.mood_types (id, label, emoji, ordem) VALUES
+    (1, 'Muito Triste', '😢', 1),
+    (2, 'Triste',       '😔', 2),
+    (3, 'Neutro',       '😐', 3),
+    (4, 'Feliz',        '🙂', 4),
+    (5, 'Muito Feliz',  '😄', 5),
+    (6, 'Ansioso(a)',   '😰', 6),
+    (7, 'Bravo(a)',     '😠', 7)
+ON CONFLICT (id) DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- 3. Registros diários de humor
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.mood_entries (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
     data          DATE NOT NULL,
-    humor         SMALLINT NOT NULL CHECK (humor BETWEEN 1 AND 5),
+    humor         SMALLINT NOT NULL REFERENCES public.mood_types (id),
     observacao    TEXT,
     criado_em     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -30,14 +55,14 @@ CREATE TABLE IF NOT EXISTS public.mood_entries (
 );
 
 COMMENT ON TABLE public.mood_entries IS 'Um registro de humor por usuário por dia';
-COMMENT ON COLUMN public.mood_entries.humor IS '1=Muito Triste, 2=Triste, 3=Neutro, 4=Feliz, 5=Muito Feliz';
+COMMENT ON COLUMN public.mood_entries.humor IS 'FK para public.mood_types.id';
 
 CREATE INDEX IF NOT EXISTS idx_mood_entries_user_id ON public.mood_entries (user_id);
 CREATE INDEX IF NOT EXISTS idx_mood_entries_data ON public.mood_entries (data DESC);
 CREATE INDEX IF NOT EXISTS idx_mood_entries_user_data ON public.mood_entries (user_id, data DESC);
 
 -- ---------------------------------------------------------------------------
--- 3. Relatórios mensais enviados (controle de envio)
+-- 4. Relatórios mensais enviados (controle de envio)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.reports (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -86,8 +111,13 @@ CREATE TRIGGER on_auth_user_created
 -- Row Level Security (RLS)
 -- ---------------------------------------------------------------------------
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mood_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mood_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+-- mood_types: leitura pública para usuários autenticados
+CREATE POLICY mood_types_select_all ON public.mood_types
+    FOR SELECT USING (true);
 
 -- users: cada usuário vê/edita apenas o próprio perfil
 CREATE POLICY users_select_own ON public.users

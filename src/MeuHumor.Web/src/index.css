@@ -19,6 +19,8 @@
   --mood-3: #94a3b8;
   --mood-4: #22c55e;
   --mood-5: #10b981;
+  --mood-6: #a855f7;
+  --mood-7: #dc2626;
 }
 
 * {
@@ -409,6 +411,8 @@ textarea {
 .summary-bar-fill.mood-3 { background: var(--mood-3); }
 .summary-bar-fill.mood-4 { background: var(--mood-4); }
 .summary-bar-fill.mood-5 { background: var(--mood-5); }
+.summary-bar-fill.mood-6 { background: var(--mood-6); }
+.summary-bar-fill.mood-7 { background: var(--mood-7); }
 
 .summary-bar-count {
   text-align: right;
@@ -458,6 +462,8 @@ textarea {
 .mood-border-3 { border-left: 4px solid var(--mood-3); }
 .mood-border-4 { border-left: 4px solid var(--mood-4); }
 .mood-border-5 { border-left: 4px solid var(--mood-5); }
+.mood-border-6 { border-left: 4px solid var(--mood-6); }
+.mood-border-7 { border-left: 4px solid var(--mood-7); }
 
 .empty-state {
   text-align: center;

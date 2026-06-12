@@ -19,6 +19,15 @@ public class MoodController : ControllerBase
         _moodService = moodService;
     }
 
+    /// <summary>Lista os tipos de humor ativos (catálogo do banco).</summary>
+    [HttpGet("types")]
+    [ProducesResponseType(typeof(IReadOnlyList<MoodTypeDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMoodTypes(CancellationToken cancellationToken)
+    {
+        var types = await _moodService.GetMoodTypesAsync(cancellationToken);
+        return Ok(types);
+    }
+
     /// <summary>Registra o humor do dia (um registro por dia).</summary>
     [HttpPost]
     [ProducesResponseType(typeof(MoodEntryResponseDto), StatusCodes.Status201Created)]
@@ -40,6 +49,10 @@ public class MoodController : ControllerBase
         catch (DuplicateMoodEntryException ex)
         {
             return Conflict(new { message = ex.Message, data = ex.EntryDate });
+        }
+        catch (InvalidMoodTypeException ex)
+        {
+            return BadRequest(new { message = ex.Message, humor = ex.MoodTypeId });
         }
     }
 

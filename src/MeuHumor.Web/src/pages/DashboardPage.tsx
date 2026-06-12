@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { moodApi } from '../lib/api'
 import { MoodSelector } from '../components/MoodSelector'
-import { MOOD_OPTIONS, type MoodEntry, type MoodValue, type MonthSummary } from '../types/mood'
+import { useMoodTypes } from '../context/MoodTypesContext'
+import type { MoodEntry, MonthSummary } from '../types/mood'
 
 function formatDate(date: string) {
   return new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
@@ -11,13 +12,10 @@ function formatDate(date: string) {
   })
 }
 
-function getMoodEmoji(humor: number) {
-  return MOOD_OPTIONS.find((o) => o.value === humor)?.emoji ?? '😐'
-}
-
 export function DashboardPage() {
+  const { types, loading: typesLoading, error: typesError } = useMoodTypes()
   const today = new Date()
-  const [humor, setHumor] = useState<MoodValue | null>(null)
+  const [humor, setHumor] = useState<number | null>(null)
   const [observacao, setObservacao] = useState('')
   const [todayEntry, setTodayEntry] = useState<MoodEntry | null>(null)
   const [summary, setSummary] = useState<MonthSummary | null>(null)
@@ -46,7 +44,7 @@ export function DashboardPage() {
         setSummary(monthSummary)
 
         if (entryToday) {
-          setHumor(entryToday.humor as MoodValue)
+          setHumor(entryToday.humor)
           setObservacao(entryToday.observacao ?? '')
         }
       } catch (err) {
@@ -93,7 +91,7 @@ export function DashboardPage() {
     }
   }
 
-  if (loading) {
+  if (loading || typesLoading) {
     return (
       <div className="page-center">
         <div className="spinner" aria-label="Carregando" />
@@ -113,10 +111,12 @@ export function DashboardPage() {
         </p>
       </section>
 
+      {(error || typesError) && <div className="alert alert-error">{error ?? typesError}</div>}
+
       {todayEntry ? (
         <section className="card today-done">
           <div className="today-mood">
-            <span className="today-emoji">{getMoodEmoji(todayEntry.humor)}</span>
+            <span className="today-emoji">{todayEntry.humorEmoji ?? '😐'}</span>
             <div>
               <h2>{todayEntry.humorLabel}</h2>
               {todayEntry.observacao && <p className="today-note">{todayEntry.observacao}</p>}
@@ -126,7 +126,7 @@ export function DashboardPage() {
       ) : (
         <form className="card mood-form" onSubmit={handleSubmit}>
           <h2>Seu humor</h2>
-          <MoodSelector value={humor} onChange={setHumor} disabled={saving} />
+          <MoodSelector types={types} value={humor} onChange={setHumor} disabled={saving} />
 
           <label className="field">
             <span>Observação do dia (opcional)</span>
@@ -139,10 +139,9 @@ export function DashboardPage() {
             />
           </label>
 
-          {error && <div className="alert alert-error">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
 
-          <button type="submit" className="btn btn-primary" disabled={saving || !humor}>
+          <button type="submit" className="btn btn-primary" disabled={saving || !humor || types.length === 0}>
             {saving ? 'Salvando...' : 'Registrar humor'}
           </button>
         </form>
@@ -163,18 +162,18 @@ export function DashboardPage() {
           </div>
 
           <div className="summary-bars">
-            {MOOD_OPTIONS.map((option) => {
+            {types.map((option) => {
               const count = summary.contagemPorCategoria[option.label] ?? 0
               const max = Math.max(...Object.values(summary.contagemPorCategoria), 1)
               const width = (count / max) * 100
 
               return (
-                <div key={option.value} className="summary-bar-row">
+                <div key={option.id} className="summary-bar-row">
                   <span className="summary-bar-label">
                     {option.emoji} {option.label}
                   </span>
                   <div className="summary-bar-track">
-                    <div className={`summary-bar-fill mood-${option.value}`} style={{ width: `${width}%` }} />
+                    <div className={`summary-bar-fill mood-${option.id}`} style={{ width: `${width}%` }} />
                   </div>
                   <span className="summary-bar-count">{count}</span>
                 </div>

@@ -19,7 +19,9 @@ public static class ServiceCollectionExtensions
         services.Configure<DatabaseSettings>(configuration.GetSection(DatabaseSettings.SectionName));
         services.Configure<SupabaseSettings>(configuration.GetSection(SupabaseSettings.SectionName));
 
+        services.AddMemoryCache();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IMoodTypeRepository, MoodTypeRepository>();
         services.AddScoped<IMoodEntryRepository, MoodEntryRepository>();
         services.AddScoped<IMoodService, MoodService>();
 

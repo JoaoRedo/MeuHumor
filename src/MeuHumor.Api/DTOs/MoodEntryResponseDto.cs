@@ -6,6 +6,7 @@ public class MoodEntryResponseDto
     public DateOnly Data { get; set; }
     public short Humor { get; set; }
     public string HumorLabel { get; set; } = string.Empty;
+    public string? HumorEmoji { get; set; }
     public string? Observacao { get; set; }
     public DateTime CriadoEm { get; set; }
 }

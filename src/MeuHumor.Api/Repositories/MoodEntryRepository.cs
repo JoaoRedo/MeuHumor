@@ -55,50 +55,56 @@ public class MoodEntryRepository : IMoodEntryRepository
         return created;
     }
 
-    public async Task<IReadOnlyList<MoodEntry>> GetHistoryByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MoodEntryWithType>> GetHistoryByUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await using var connection = new NpgsqlConnection(_connectionString);
 
         const string sql = """
-            SELECT id            AS Id,
-                   user_id       AS UserId,
-                   data          AS Data,
-                   humor         AS Humor,
-                   observacao    AS Observacao,
-                   criado_em     AS CriadoEm,
-                   atualizado_em AS AtualizadoEm
-            FROM public.mood_entries
-            WHERE user_id = @UserId
-            ORDER BY data DESC
+            SELECT me.id            AS Id,
+                   me.user_id       AS UserId,
+                   me.data          AS Data,
+                   me.humor         AS Humor,
+                   me.observacao    AS Observacao,
+                   me.criado_em     AS CriadoEm,
+                   me.atualizado_em AS AtualizadoEm,
+                   mt.label         AS HumorLabel,
+                   mt.emoji         AS HumorEmoji
+            FROM public.mood_entries me
+            INNER JOIN public.mood_types mt ON mt.id = me.humor
+            WHERE me.user_id = @UserId
+            ORDER BY me.data DESC
             """;
 
-        var entries = await connection.QueryAsync<MoodEntry>(
+        var entries = await connection.QueryAsync<MoodEntryWithType>(
             new CommandDefinition(sql, new { UserId = userId }, cancellationToken: cancellationToken));
 
         return entries.AsList();
     }
 
-    public async Task<IReadOnlyList<MoodEntry>> GetByUserAndMonthAsync(
+    public async Task<IReadOnlyList<MoodEntryWithType>> GetByUserAndMonthAsync(
         Guid userId, short mes, short ano, CancellationToken cancellationToken = default)
     {
         await using var connection = new NpgsqlConnection(_connectionString);
 
         const string sql = """
-            SELECT id            AS Id,
-                   user_id       AS UserId,
-                   data          AS Data,
-                   humor         AS Humor,
-                   observacao    AS Observacao,
-                   criado_em     AS CriadoEm,
-                   atualizado_em AS AtualizadoEm
-            FROM public.mood_entries
-            WHERE user_id = @UserId
-              AND EXTRACT(MONTH FROM data) = @Mes
-              AND EXTRACT(YEAR FROM data) = @Ano
-            ORDER BY data ASC
+            SELECT me.id            AS Id,
+                   me.user_id       AS UserId,
+                   me.data          AS Data,
+                   me.humor         AS Humor,
+                   me.observacao    AS Observacao,
+                   me.criado_em     AS CriadoEm,
+                   me.atualizado_em AS AtualizadoEm,
+                   mt.label         AS HumorLabel,
+                   mt.emoji         AS HumorEmoji
+            FROM public.mood_entries me
+            INNER JOIN public.mood_types mt ON mt.id = me.humor
+            WHERE me.user_id = @UserId
+              AND EXTRACT(MONTH FROM me.data) = @Mes
+              AND EXTRACT(YEAR FROM me.data) = @Ano
+            ORDER BY me.data ASC
             """;
 
-        var entries = await connection.QueryAsync<MoodEntry>(
+        var entries = await connection.QueryAsync<MoodEntryWithType>(
             new CommandDefinition(sql, new { UserId = userId, Mes = mes, Ano = ano }, cancellationToken: cancellationToken));
 
         return entries.AsList();

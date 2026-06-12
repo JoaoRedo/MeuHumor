@@ -37,10 +37,16 @@ if (app.Environment.IsDevelopment())
             await connection.OpenAsync();
             app.Logger.LogInformation("Conexão com PostgreSQL estabelecida com sucesso.");
 
-            await using var cmd = new NpgsqlCommand("SELECT to_regclass('public.mood_entries')", connection);
-            var table = await cmd.ExecuteScalarAsync();
-            if (table is null)
-                app.Logger.LogWarning("Tabela public.mood_entries não encontrada. Execute database/schema.sql no Supabase.");
+            await using var cmd = new NpgsqlCommand(
+                "SELECT to_regclass('public.mood_entries'), to_regclass('public.mood_types')", connection);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                if (reader.IsDBNull(0))
+                    app.Logger.LogWarning("Tabela public.mood_entries não encontrada. Execute database/schema.sql no Supabase.");
+                if (reader.IsDBNull(1))
+                    app.Logger.LogWarning("Tabela public.mood_types não encontrada. Execute database/migrations/003_create_mood_types.sql no Supabase.");
+            }
         }
         catch (Exception ex)
         {

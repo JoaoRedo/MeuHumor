@@ -5,7 +5,7 @@ namespace MeuHumor.Api.DTOs;
 public class CreateMoodEntryDto
 {
     [Required]
-    [Range(1, 5, ErrorMessage = "Humor deve estar entre 1 (Muito Triste) e 5 (Muito Feliz).")]
+    [Range(1, short.MaxValue, ErrorMessage = "Informe um tipo de humor válido.")]
     public short Humor { get; set; }
 
     public string? Observacao { get; set; }

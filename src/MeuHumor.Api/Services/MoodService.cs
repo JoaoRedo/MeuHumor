@@ -8,17 +8,31 @@ namespace MeuHumor.Api.Services;
 public class MoodService : IMoodService
 {
     private readonly IMoodEntryRepository _moodEntryRepository;
+    private readonly IMoodTypeRepository _moodTypeRepository;
     private readonly IUserRepository _userRepository;
 
-    public MoodService(IMoodEntryRepository moodEntryRepository, IUserRepository userRepository)
+    public MoodService(
+        IMoodEntryRepository moodEntryRepository,
+        IMoodTypeRepository moodTypeRepository,
+        IUserRepository userRepository)
     {
         _moodEntryRepository = moodEntryRepository;
+        _moodTypeRepository = moodTypeRepository;
         _userRepository = userRepository;
+    }
+
+    public async Task<IReadOnlyList<MoodTypeDto>> GetMoodTypesAsync(CancellationToken cancellationToken = default)
+    {
+        var types = await _moodTypeRepository.GetActiveAsync(cancellationToken);
+        return types.Select(MapToDto).ToList();
     }
 
     public async Task<MoodEntryResponseDto> RegisterMoodAsync(
         Guid userId, CreateMoodEntryDto dto, CancellationToken cancellationToken = default)
     {
+        var moodType = await _moodTypeRepository.GetActiveByIdAsync(dto.Humor, cancellationToken)
+            ?? throw new InvalidMoodTypeException(dto.Humor);
+
         var data = dto.Data ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
         if (await _moodEntryRepository.ExistsForDateAsync(userId, data, cancellationToken))
@@ -30,12 +44,12 @@ public class MoodService : IMoodService
         {
             UserId = userId,
             Data = data,
-            Humor = dto.Humor,
+            Humor = moodType.Id,
             Observacao = dto.Observacao
         };
 
         var created = await _moodEntryRepository.CreateAsync(entry, cancellationToken);
-        return MapToResponse(created);
+        return MapToResponse(created, moodType);
     }
 
     public async Task<IReadOnlyList<MoodEntryResponseDto>> GetHistoryAsync(
@@ -51,13 +65,15 @@ public class MoodService : IMoodService
         ValidateMonthYear(mes, ano);
 
         var entries = await _moodEntryRepository.GetByUserAndMonthAsync(userId, mes, ano, cancellationToken);
-
-        var contagem = Enum.GetValues<MoodLevel>()
-            .ToDictionary(level => level.ToLabel(), _ => 0);
+        var activeTypes = await _moodTypeRepository.GetActiveAsync(cancellationToken);
+        var contagem = activeTypes.ToDictionary(t => t.Label, _ => 0);
 
         foreach (var entry in entries)
         {
-            var label = ((MoodLevel)entry.Humor).ToLabel();
+            var label = entry.HumorLabel;
+            if (!contagem.ContainsKey(label))
+                contagem[label] = 0;
+
             contagem[label]++;
         }
 
@@ -85,12 +101,32 @@ public class MoodService : IMoodService
             throw new ArgumentOutOfRangeException(nameof(ano), "Ano inválido.");
     }
 
-    private static MoodEntryResponseDto MapToResponse(MoodEntry entry) => new()
+    private static MoodTypeDto MapToDto(MoodType type) => new()
+    {
+        Id = type.Id,
+        Label = type.Label,
+        Emoji = type.Emoji,
+        Ordem = type.Ordem
+    };
+
+    private static MoodEntryResponseDto MapToResponse(MoodEntryWithType entry) => new()
     {
         Id = entry.Id,
         Data = entry.Data,
         Humor = entry.Humor,
-        HumorLabel = ((MoodLevel)entry.Humor).ToLabel(),
+        HumorLabel = entry.HumorLabel,
+        HumorEmoji = entry.HumorEmoji,
+        Observacao = entry.Observacao,
+        CriadoEm = entry.CriadoEm
+    };
+
+    private static MoodEntryResponseDto MapToResponse(MoodEntry entry, MoodType moodType) => new()
+    {
+        Id = entry.Id,
+        Data = entry.Data,
+        Humor = entry.Humor,
+        HumorLabel = moodType.Label,
+        HumorEmoji = moodType.Emoji,
         Observacao = entry.Observacao,
         CriadoEm = entry.CriadoEm
     };
