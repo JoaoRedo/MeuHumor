@@ -1,0 +1,76 @@
+using MeuHumor.Api.DTOs;
+using MeuHumor.Api.Exceptions;
+using MeuHumor.Api.Extensions;
+using MeuHumor.Api.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MeuHumor.Api.Controllers;
+
+[ApiController]
+[Route("api/mood")]
+[Authorize]
+public class MoodController : ControllerBase
+{
+    private readonly IMoodService _moodService;
+
+    public MoodController(IMoodService moodService)
+    {
+        _moodService = moodService;
+    }
+
+    /// <summary>Registra o humor do dia (um registro por dia).</summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(MoodEntryResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RegisterMood(
+        [FromBody] CreateMoodEntryDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        try
+        {
+            var userId = User.GetUserId();
+            var result = await _moodService.RegisterMoodAsync(userId, dto, cancellationToken);
+            return CreatedAtAction(nameof(GetHistory), result);
+        }
+        catch (DuplicateMoodEntryException ex)
+        {
+            return Conflict(new { message = ex.Message, data = ex.EntryDate });
+        }
+    }
+
+    /// <summary>Lista o histórico de humor do usuário autenticado (mais recente primeiro).</summary>
+    [HttpGet("history")]
+    [ProducesResponseType(typeof(IReadOnlyList<MoodEntryResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHistory(CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var history = await _moodService.GetHistoryAsync(userId, cancellationToken);
+        return Ok(history);
+    }
+
+    /// <summary>Retorna resumo mensal com média e contagem por categoria de humor.</summary>
+    [HttpGet("month-summary")]
+    [ProducesResponseType(typeof(MonthSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetMonthSummary(
+        [FromQuery] short mes,
+        [FromQuery] short ano,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            var summary = await _moodService.GetMonthSummaryAsync(userId, mes, ano, cancellationToken);
+            return Ok(summary);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+}

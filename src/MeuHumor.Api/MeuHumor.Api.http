@@ -1,0 +1,6 @@
+@MeuHumor.Api_HostAddress = http://localhost:5283
+
+GET {{MeuHumor.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
