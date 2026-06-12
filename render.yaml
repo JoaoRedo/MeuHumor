@@ -4,8 +4,7 @@ services:
     runtime: docker
     region: oregon
     plan: free
-    dockerfilePath: ./src/MeuHumor.Api/Dockerfile
-    dockerContext: ./src/MeuHumor.Api
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
