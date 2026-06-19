@@ -11,7 +11,7 @@ public class CreateMoodEntryDto
     public string? Observacao { get; set; }
 
     /// <summary>
-    /// Data do registro. Se omitida, usa a data atual (UTC).
+    /// Data do registro. Se omitida, usa a data atual (fuso America/Sao_Paulo).
     /// </summary>
     public DateOnly? Data { get; set; }
 }

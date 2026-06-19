@@ -27,13 +27,31 @@ public class MoodService : IMoodService
         return types.Select(MapToDto).ToList();
     }
 
+    public async Task<MoodEntryResponseDto?> GetTodayMoodAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var today = AppTimeZone.GetTodayDate();
+        var existing = await _moodEntryRepository.GetByUserAndDateAsync(userId, today, cancellationToken);
+        if (existing is null)
+            return null;
+
+        var moodType = await _moodTypeRepository.GetActiveByIdAsync(existing.Humor, cancellationToken);
+        if (moodType is null)
+            return null;
+
+        return MapToResponse(existing, moodType);
+    }
+
     public async Task<MoodEntryResponseDto> RegisterMoodAsync(
         Guid userId, CreateMoodEntryDto dto, CancellationToken cancellationToken = default)
     {
         var moodType = await _moodTypeRepository.GetActiveByIdAsync(dto.Humor, cancellationToken)
             ?? throw new InvalidMoodTypeException(dto.Humor);
 
-        var data = dto.Data ?? GetTodayDate();
+        var data = AppTimeZone.GetTodayDate();
+
+        if (dto.Data is not null && dto.Data != data)
+            throw new ArgumentException("Só é possível registrar o humor do dia atual.", nameof(dto.Data));
 
         if (await _moodEntryRepository.ExistsForDateAsync(userId, data, cancellationToken))
             throw new DuplicateMoodEntryException(data);
@@ -58,7 +76,7 @@ public class MoodService : IMoodService
         var moodType = await _moodTypeRepository.GetActiveByIdAsync(dto.Humor, cancellationToken)
             ?? throw new InvalidMoodTypeException(dto.Humor);
 
-        var today = GetTodayDate();
+        var today = AppTimeZone.GetTodayDate();
         var existing = await _moodEntryRepository.GetByUserAndDateAsync(userId, today, cancellationToken)
             ?? throw new MoodEntryNotFoundException(today);
 
@@ -108,8 +126,6 @@ public class MoodService : IMoodService
             ContagemPorCategoria = contagem
         };
     }
-
-    private static DateOnly GetTodayDate() => DateOnly.FromDateTime(DateTime.UtcNow);
 
     private static void ValidateMonthYear(short mes, short ano)
     {

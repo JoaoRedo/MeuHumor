@@ -33,7 +33,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   }
 
   if (response.status === 204) {
-    return undefined as T
+    return null as T
   }
 
   return response.json() as Promise<T>
@@ -41,6 +41,8 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 export const moodApi = {
   getMoodTypes: () => apiFetch<MoodType[]>('/api/mood/types'),
+
+  getToday: () => apiFetch<MoodEntry | null>('/api/mood/today'),
 
   register: (payload: CreateMoodPayload) =>
     apiFetch<MoodEntry>('/api/mood', {

@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 
 import { moodApi } from '../lib/api'
+import { getLocalDateIso } from '../lib/dates'
 
 import { MoodSelector } from '../components/MoodSelector'
 
@@ -31,9 +32,9 @@ export function DashboardPage() {
   const { types, loading: typesLoading, error: typesError } = useMoodTypes()
 
   const today = new Date()
+  const todayIso = getLocalDateIso(today)
 
   const [humor, setHumor] = useState<number | null>(null)
-
   const [observacao, setObservacao] = useState('')
 
   const [todayEntry, setTodayEntry] = useState<MoodEntry | null>(null)
@@ -48,15 +49,12 @@ export function DashboardPage() {
 
   const [success, setSuccess] = useState<string | null>(null)
 
-
-
-  const todayIso = today.toISOString().slice(0, 10)
-
   const mes = today.getMonth() + 1
 
   const ano = today.getFullYear()
 
   const isEditing = todayEntry !== null
+  const displayDate = todayEntry?.data ?? todayIso
 
   const hasChanges =
     isEditing &&
@@ -78,17 +76,13 @@ export function DashboardPage() {
 
       try {
 
-        const [history, monthSummary] = await Promise.all([
+        const [entryToday, monthSummary] = await Promise.all([
 
-          moodApi.getHistory(),
+          moodApi.getToday(),
 
           moodApi.getMonthSummary(mes, ano),
 
         ])
-
-
-
-        const entryToday = history.find((e) => e.data === todayIso) ?? null
 
         setTodayEntry(entryToday)
 
@@ -149,11 +143,8 @@ export function DashboardPage() {
 
 
     const payload = {
-
       humor,
-
       observacao: observacao.trim() || undefined,
-
     }
 
 
@@ -214,7 +205,7 @@ export function DashboardPage() {
 
         <p className="eyebrow">Hoje</p>
 
-        <h1>{formatDate(todayIso)}</h1>
+        <h1>{formatDate(displayDate)}</h1>
 
         <p className="subtitle">
 

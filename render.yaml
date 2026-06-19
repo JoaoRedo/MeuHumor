@@ -9,6 +9,8 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      - key: TZ
+        value: America/Sao_Paulo
       - key: Database__ConnectionString
         sync: false
       - key: Supabase__Url

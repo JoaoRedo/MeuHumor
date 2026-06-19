@@ -54,6 +54,21 @@ public class MoodController : ControllerBase
         {
             return BadRequest(new { message = ex.Message, humor = ex.MoodTypeId });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Retorna o registro de humor do dia atual, se existir.</summary>
+    [HttpGet("today")]
+    [ProducesResponseType(typeof(MoodEntryResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> GetTodayMood(CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var entry = await _moodService.GetTodayMoodAsync(userId, cancellationToken);
+        return entry is null ? NoContent() : Ok(entry);
     }
 
     /// <summary>Atualiza o humor do dia atual (registros de dias anteriores não podem ser editados).</summary>
